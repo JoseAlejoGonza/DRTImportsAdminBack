@@ -56,4 +56,10 @@ app.post("/login", async (req, res)=>{
     }else{
         res.sendStatus(400);
     }
-})
+});
+
+app.get("/users-admin", async (req, res)=>{
+    const connection = await database.getConnection();
+    const [rows, fields] = await connection.query("SELECT ua.name, ua.email, ua.alias FROM user_admin ua WHERE ua.name IS NOT NULL AND name <> ''");
+    res.json(rows);
+});

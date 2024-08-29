@@ -68,14 +68,14 @@ app.get("/users-admin", async (req, res)=>{
 
 app.get("/list-category", async (req, res)=>{
     const connection = await database.getConnection();
-    const [rows, fields] = await connection.query("SELECT c.category_name FROM category c WHERE c.category_name IS NOT NULL AND c.category_name <> ''");
+    const [rows, fields] = await connection.query("SELECT c.id,c.category_name FROM category c WHERE c.category_name IS NOT NULL AND c.category_name <> ''");
     res.json(rows);
 });
 
 app.get("/list-subcategory/:idCategory", async (req, res)=>{
     const itemId = req.params.idCategory;
     const connection = await database.getConnection();
-    const query = `SELECT sc.sub_category_name FROM sub_category sc JOIN category c ON sc.category_id = ${itemId} WHERE sub_category_name IS NOT NULL AND sub_category_name <> ''`
+    const query = `SELECT sc.id, sc.sub_category_name FROM sub_category sc JOIN category c ON sc.category_id = c.id WHERE sc.category_id = ${itemId} AND sub_category_name IS NOT NULL AND sub_category_name <> ''`
     const [rows, fields] = await connection.query(query);
     res.json(rows);
 });
@@ -83,7 +83,6 @@ app.get("/list-subcategory/:idCategory", async (req, res)=>{
 app.post("/new-category", async (req, res)=>{
     if(req.body && Object.keys(req.body).length > 0){
         let isInsertCategory =  await category.createCategory(req.body);
-        console.log(isInsertCategory, "esta es la respuesta");
         switch (isInsertCategory) {
             case constCategroy.INSERT_SUCCESFUL:
                 res.json(response.responseStructure(200,"",constCategroy.INSERT_SUCCESFUL));
@@ -95,7 +94,33 @@ app.post("/new-category", async (req, res)=>{
                 res.json(response.responseStructure(418,"",constCategroy.INSERT_FAILED));
                 break;
             default:
-                res.json(response.responseStructure(404,"",constLogin.BADLOGIN));
+                res.json(response.responseStructure(404,"",constCategroy.ERROR));
+                break;
+        }
+    }else{
+        res.sendStatus(400);
+    }
+});
+
+app.post("/new-subcategory", async (req, res)=>{
+    if(req.body && Object.keys(req.body).length > 0){
+        let isInsertSubcategory =  await category.createSubcategory(req.body);
+        switch (isInsertSubcategory.message) {
+            case constCategroy.INSERT_SUCCESFUL:
+                let responseToBody={
+                    messageRes: isInsertSubcategory.message,
+                    id_caegory: isInsertSubcategory.category_id
+                };
+                res.json(response.responseStructure(200,"",responseToBody));
+                break;
+            case constCategroy.CATEGORY_EXIST:
+                res.json(response.responseStructure(416,"",constCategroy.CATEGORY_EXIST));
+                break;
+            case constCategroy.INSERT_FAILED:
+                res.json(response.responseStructure(418,"",constCategroy.INSERT_FAILED));
+                break;
+            default:
+                res.json(response.responseStructure(404,"",constCategroy.ERROR));
                 break;
         }
     }else{

@@ -83,18 +83,20 @@ app.get("/list-subcategory/:idCategory", async (req, res)=>{
 app.post("/new-category", async (req, res)=>{
     if(req.body && Object.keys(req.body).length > 0){
         let isInsertCategory =  await category.createCategory(req.body);
-        switch (isInsertCategory) {
+        console.log(isInsertCategory, 'esta es la respuesta de la consulta');
+        switch (isInsertCategory.messageRes) {
             case constCategroy.INSERT_SUCCESFUL:
-                res.json(response.responseStructure(200,"",constCategroy.INSERT_SUCCESFUL));
+                console.log(isInsertCategory);
+                res.json(response.responseStructure(200,"",isInsertCategory));
                 break;
             case constCategroy.CATEGORY_EXIST:
-                res.json(response.responseStructure(416,"",constCategroy.CATEGORY_EXIST));
+                res.json(response.responseStructure(416,"",isInsertCategory));
                 break;
             case constCategroy.INSERT_FAILED:
-                res.json(response.responseStructure(418,"",constCategroy.INSERT_FAILED));
+                res.json(response.responseStructure(418,"",isInsertCategory));
                 break;
             default:
-                res.json(response.responseStructure(404,"",constCategroy.ERROR));
+                res.json(response.responseStructure(404,"",isInsertCategory));
                 break;
         }
     }else{
@@ -104,23 +106,21 @@ app.post("/new-category", async (req, res)=>{
 
 app.post("/new-subcategory", async (req, res)=>{
     if(req.body && Object.keys(req.body).length > 0){
+        console.log(req, "esto es req");
+        console.log(req.body, "esto es req.body");
         let isInsertSubcategory =  await category.createSubcategory(req.body);
-        switch (isInsertSubcategory.message) {
+        switch (isInsertSubcategory.messageRes) {
             case constCategroy.INSERT_SUCCESFUL:
-                let responseToBody={
-                    messageRes: isInsertSubcategory.message,
-                    id_caegory: isInsertSubcategory.category_id
-                };
-                res.json(response.responseStructure(200,"",responseToBody));
+                res.json(response.responseStructure(200,"",isInsertSubcategory));
                 break;
-            case constCategroy.CATEGORY_EXIST:
-                res.json(response.responseStructure(416,"",constCategroy.CATEGORY_EXIST));
+            case constCategroy.SUBCATEGORY_EXIST:
+                res.json(response.responseStructure(416,"",isInsertSubcategory));
                 break;
             case constCategroy.INSERT_FAILED:
-                res.json(response.responseStructure(418,"",constCategroy.INSERT_FAILED));
+                res.json(response.responseStructure(418,"",isInsertSubcategory));
                 break;
             default:
-                res.json(response.responseStructure(404,"",constCategroy.ERROR));
+                res.json(response.responseStructure(404,"",isInsertSubcategory));
                 break;
         }
     }else{

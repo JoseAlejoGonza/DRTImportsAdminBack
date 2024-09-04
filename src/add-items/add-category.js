@@ -13,6 +13,7 @@ async function createCategory(name){
     }else{
         let queryAdd = `INSERT INTO category (category_name) VALUES ('${name.data.categoryName}');`
         const [rowsAdd, fieldsAdd] = await connection.query(queryAdd);
+        console.log(rowsAdd);
         if(rowsAdd && rowsAdd.affectedRows == 1){
             let searchNewCategory = await searchCategory(name.data.categoryName);
             console.log(searchNewCategory, 'esta es la segunda llamada del search');

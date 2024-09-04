@@ -6,6 +6,8 @@ const response = require("./models/modelResponse");
 const constLogin = require("./const/const-login");
 const constCategroy = require("./const/const-category");
 const category = require("./add-items/add-category");
+const product = require("./add-items/add-products");
+const constProduct = require("./const/const-product");
 const cors = require("cors");
 
 // Initial configuration
@@ -36,6 +38,18 @@ app.get("/products", async (req, res)=>{
         rows[i].imageUrl = imageUrlArray;
     }
     res.json(rows);
+});
+
+app.get("/get-product-codebar/:codeBar", async (req, res)=>{
+    const itemCodeBar = req.params.codeBar;
+    const connection = await database.getConnection();
+    const query = `SELECT p.id, p.name, p.description, p.created_at, p.slug, p.sub_category_id, p.total_quantity FROM product p WHERE p.bar_code = ${itemCodeBar} AND name IS NOT NULL AND name <> '';`;
+    const [rows, fields] = await connection.query(query);
+    if(rows.length === 0){
+        res.sendStatus(404);
+    }else{
+        res.json(rows[0]);
+    }
 });
 
 app.post("/login", async (req, res)=>{
@@ -83,10 +97,8 @@ app.get("/list-subcategory/:idCategory", async (req, res)=>{
 app.post("/new-category", async (req, res)=>{
     if(req.body && Object.keys(req.body).length > 0){
         let isInsertCategory =  await category.createCategory(req.body);
-        console.log(isInsertCategory, 'esta es la respuesta de la consulta');
         switch (isInsertCategory.messageRes) {
             case constCategroy.INSERT_SUCCESFUL:
-                console.log(isInsertCategory);
                 res.json(response.responseStructure(200,"",isInsertCategory));
                 break;
             case constCategroy.CATEGORY_EXIST:
@@ -106,8 +118,6 @@ app.post("/new-category", async (req, res)=>{
 
 app.post("/new-subcategory", async (req, res)=>{
     if(req.body && Object.keys(req.body).length > 0){
-        console.log(req, "esto es req");
-        console.log(req.body, "esto es req.body");
         let isInsertSubcategory =  await category.createSubcategory(req.body);
         switch (isInsertSubcategory.messageRes) {
             case constCategroy.INSERT_SUCCESFUL:
@@ -121,6 +131,28 @@ app.post("/new-subcategory", async (req, res)=>{
                 break;
             default:
                 res.json(response.responseStructure(404,"",isInsertSubcategory));
+                break;
+        }
+    }else{
+        res.sendStatus(400);
+    }
+});
+
+app.post("/new-product", async (req, res)=>{
+    if(req.body && Object.keys(req.body).length > 0){
+        let isInsertProduct = await product.createPrice(req.body);
+        switch (isInsertProduct.messageRes) {
+            case constProduct.INSERT_SUCCESFUL:
+                res.json(response.responseStructure(200,"",isInsertProduct));
+                break;
+            case constProduct.PRODUCT_EXIST:
+                res.json(response.responseStructure(416,"",isInsertProduct));
+                break;
+            case constProduct.INSERT_FAILED:
+                res.json(response.responseStructure(418,"",isInsertProduct));
+                break;
+            default:
+                res.json(response.responseStructure(404,"",isInsertProduct));
                 break;
         }
     }else{

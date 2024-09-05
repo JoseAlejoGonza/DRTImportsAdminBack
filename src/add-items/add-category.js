@@ -13,10 +13,8 @@ async function createCategory(name){
     }else{
         let queryAdd = `INSERT INTO category (category_name) VALUES ('${name.data.categoryName}');`
         const [rowsAdd, fieldsAdd] = await connection.query(queryAdd);
-        console.log(rowsAdd);
         if(rowsAdd && rowsAdd.affectedRows == 1){
             let searchNewCategory = await searchCategory(name.data.categoryName);
-            console.log(searchNewCategory, 'esta es la segunda llamada del search');
             bodyResponse.messageRes='insert_successful';
             bodyResponse.id_category=searchNewCategory[0].id;
         }else{
@@ -34,7 +32,6 @@ async function searchCategory(name){
 }
 
 async function createSubcategory(body){
-    console.log(body, 'esto es body dentro de create subcategory');
     const connection = await database.getConnection();
     let bodyResponse = {};
     let search = await searchSubcategory(body);
@@ -46,7 +43,6 @@ async function createSubcategory(body){
         const [rowsAdd, fieldsAdd] = await connection.query(queryAdd);
         if(rowsAdd && rowsAdd.affectedRows == 1){
             let searchNewSubategory = await searchSubcategory(body);
-            console.log(searchNewSubategory, 'esta es la segunda llamada del search');
             bodyResponse.messageRes='insert_successful';
             bodyResponse.categoryInfo=searchNewSubategory[0];
         }else{

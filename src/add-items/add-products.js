@@ -4,6 +4,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 async function createPrice(productInfo){
+    console.log(productInfo, 'esto es product info');
     const connection = await database.getConnection();
     let bodyResponse = {};
     let search = await searchProduct(productInfo.data.pName);

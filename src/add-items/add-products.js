@@ -27,7 +27,6 @@ async function createPrice(productInfo){
 async function createProduct(productInfo, priceId){
     const connection = await database.getConnection();
     let response = '';
-    let date = new Date();
     let queryAddProduct = `INSERT INTO product 
         (name, description, slug, sub_category_id, total_quantity, bar_code, price_id, admin_id) 
         VALUES ('${productInfo.data.pName}', '${productInfo.data.pDesc}', '${productInfo.data.pSlug}', ${productInfo.data.pCategoryInfo.id}, ${productInfo.data.pQantity}, ${productInfo.data.pCodeBar}, ${priceId}, 1);`;
@@ -43,6 +42,31 @@ async function createProduct(productInfo, priceId){
         response = 'insert_failed';
     }
     return response;
+};
+
+async function updateProduct(pInfoToUpdate){
+    const connection = await database.getConnection();
+    let bodyResponse = {};
+
+    let queryUpdateProduct = `UPDATE product SET name = '${pInfoToUpdate.data.pName}', description = '${pInfoToUpdate.data.pDesc}', total_quantity = ${pInfoToUpdate.data.pQantity} WHERE (id = ${pInfoToUpdate.data.pId});`;
+    const [rowsUpdateProduct, fieldsAdd] = await connection.query(queryUpdateProduct);
+    if(rowsUpdateProduct && rowsUpdateProduct.affectedRows == 1){
+        let realPrice = pInfoToUpdate.data.pPrice - ((pInfoToUpdate.data.pPrice*pInfoToUpdate.data.pPercent)/100);
+        let queryUpdatePrice = `UPDATE product_price SET price = ${realPrice}, regular_price = ${pInfoToUpdate.data.pPrice}, discount = ${pInfoToUpdate.data.pPercent} WHERE (id = ${pInfoToUpdate.data.pPriceId});`;
+        const [rowsUpdatePrice, fieldsAdd] = await connection.query(queryUpdatePrice);
+        if(rowsUpdatePrice && rowsUpdatePrice.affectedRows == 1){
+            for(let i = 0; i < pInfoToUpdate.data.imgUrls.length; i++){
+                let queryUpdateUrls = `UPDATE imagedetails SET image_url = '${pInfoToUpdate.data.imgUrls[i]}' WHERE (id = ${pInfoToUpdate.data.imgIds[i]});`;
+                const [rowsUpdateUrls, fieldsAdd] = await connection.query(queryUpdateUrls);
+                if(rowsUpdateUrls && rowsUpdateUrls.affectedRows == 1 && i == pInfoToUpdate.data.imgUrls.length-1){
+                    bodyResponse.messageRes='update_successful';
+                }
+            }
+        }
+    }else{
+        bodyResponse.messageRes = 'update_failed';
+    }
+    return bodyResponse;
 };
 
 async function createUrls(urlInfo, productId){
@@ -72,5 +96,6 @@ async function searchProduct(name){
 }
 
 module.exports = {
-    createPrice
+    createPrice,
+    updateProduct
 }

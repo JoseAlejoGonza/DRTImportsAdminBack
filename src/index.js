@@ -25,18 +25,8 @@ app.use(express.json());
 // Routes
 app.get("/products", async (req, res)=>{
     const connection = await database.getConnection();
-    const [rows, fields] = await connection.query("SELECT p.id, p.name, p.description, p.created_at, p.slug, p.sub_category_id, p.total_quantity, c.sub_category_name FROM product p JOIN sub_category c ON p.sub_category_id = c.id WHERE name IS NOT NULL AND name <> ''");
-    for(let i =0; i< rows.length; i++){
-        let imageUrlArray = [];
-        const query = `SELECT image_url FROM imagedetails where product_id = ${rows[i].id}`;
-        const [rowsImages, fieldsImages] = await connection.query(query);
-
-        for(let img = 0; img< rowsImages.length; img++){
-            imageUrlArray.push(rowsImages[img].image_url);
-        }
-
-        rows[i].imageUrl = imageUrlArray;
-    }
+    let query = `SELECT p.id AS product_id, p.name AS product_name, p.description AS product_description, p.total_quantity, p.bar_code, p.price_id, pp.price, pp.regular_price, pp.discount, sc.sub_category_name, GROUP_CONCAT(img.image_url) AS images, GROUP_CONCAT(img.id) AS imagesId FROM product p JOIN product_price pp ON p.price_id = pp.id JOIN sub_category sc ON p.sub_category_id = sc.id LEFT JOIN imagedetails img ON p.id = img.product_id GROUP BY p.id;`;
+    const [rows, fields] = await connection.query(query);
     res.json(rows);
 });
 
@@ -153,6 +143,25 @@ app.post("/new-product", async (req, res)=>{
                 break;
             default:
                 res.json(response.responseStructure(404,"",isInsertProduct));
+                break;
+        }
+    }else{
+        res.sendStatus(400);
+    }
+});
+
+app.put("/edit-product", async (req, res)=>{
+    if(req.body && Object.keys(req.body).length > 0){
+        let isUpdateProduct =  await product.updateProduct(req.body);
+        switch (isUpdateProduct.messageRes) {
+            case constProduct.UPDATE_SUCCESFUL:
+                res.json(response.responseStructure(200,"",isUpdateProduct));
+                break;
+            case constProduct.UPDATE_FAILED:
+                res.json(response.responseStructure(418,"",isUpdateProduct));
+                break;
+            default:
+                res.json(response.responseStructure(404,"",isUpdateProduct));
                 break;
         }
     }else{

@@ -7,6 +7,7 @@ const constLogin = require("./const/const-login");
 const constCategroy = require("./const/const-category");
 const category = require("./add-items/add-category");
 const product = require("./add-items/add-products");
+const purchase = require("./purchase/send-purchase")
 const constProduct = require("./const/const-product");
 const cors = require("cors");
 
@@ -94,7 +95,7 @@ app.post("/new-category", async (req, res)=>{
             case constCategroy.CATEGORY_EXIST:
                 res.json(response.responseStructure(416,"",isInsertCategory));
                 break;
-            case constCategroy.INSERT_FAILED:
+            case constCategroy.INSERT_FAILED:                
                 res.json(response.responseStructure(418,"",isInsertCategory));
                 break;
             default:
@@ -162,6 +163,39 @@ app.put("/edit-product", async (req, res)=>{
                 break;
             default:
                 res.json(response.responseStructure(404,"",isUpdateProduct));
+                break;
+        }
+    }else{
+        res.sendStatus(400);
+    }
+});
+
+app.get("/list-pending-purchases", async (req, res)=>{
+    const connection = await database.getConnection();
+    const [rows, fields] = await connection.query("SELECT p.id,p.purchase_quantity,p.purchase_date,p.total_price,p.address_to_send,p.order_id FROM purchase p WHERE p.it_was_sent = false;");
+    res.json(rows);
+});
+
+app.get("/list-products-by-order/:idPurchase", async (req, res)=>{
+    const itemId = req.params.idPurchase;
+    const connection = await database.getConnection();
+    const query = `SELECT p.name, p.bar_code, p.sub_category_id, pi.purchase_quantity,pi.unit_price,pi.total_price FROM purchase_items pi JOIN product p ON pi.product_id = p.id WHERE pi.purchase_id = ${itemId};`
+    const [rows, fields] = await connection.query(query);
+    res.json(rows);
+});
+
+app.put("/send-purchase", async (req, res)=>{
+    if(req.body && Object.keys(req.body).length > 0){
+        let isUpdatePurchase =  await purchase.updatePurchase(req.body);
+        switch (isUpdatePurchase.messageRes) {
+            case constProduct.UPDATE_SUCCESFUL:
+                res.json(response.responseStructure(200,"",isUpdatePurchase));
+                break;
+            case constProduct.UPDATE_FAILED:
+                res.json(response.responseStructure(418,"",isUpdatePurchase));
+                break;
+            default:
+                res.json(response.responseStructure(404,"",isUpdatePurchase));
                 break;
         }
     }else{

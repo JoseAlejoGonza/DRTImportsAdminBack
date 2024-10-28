@@ -172,7 +172,19 @@ app.put("/edit-product", async (req, res)=>{
 
 app.get("/list-pending-purchases", async (req, res)=>{
     const connection = await database.getConnection();
-    const [rows, fields] = await connection.query("SELECT p.id,p.purchase_quantity,p.purchase_date,p.total_price,p.address_to_send,p.order_id FROM purchase p WHERE p.it_was_sent = false;");
+    const [rows, fields] = await connection.query("SELECT p.id,p.purchase_quantity,p.purchase_date,p.total_price,p.address_to_send,p.order_id,p.is_being_prepared,p.is_delivered FROM purchase p WHERE p.it_was_sent = false;");
+    res.json(rows);
+});
+
+app.get("/list-history-purchases", async (req, res)=>{
+    const connection = await database.getConnection();
+    const [rows, fields] = await connection.query("SELECT p.id,p.purchase_quantity,p.purchase_date,p.total_price,p.address_to_send,p.order_id,p.is_being_prepared,p.is_delivered FROM purchase p WHERE p.is_delivered = true;");
+    res.json(rows);
+});
+
+app.get("/list-pending-purchases-delivered", async (req, res)=>{
+    const connection = await database.getConnection();
+    const [rows, fields] = await connection.query("SELECT p.id,p.purchase_quantity,p.purchase_date,p.total_price,p.address_to_send,p.order_id,p.is_being_prepared,p.is_delivered,p.it_was_sent FROM purchase p WHERE p.it_was_sent = true AND p.is_being_prepared = true AND p.is_delivered = false;");
     res.json(rows);
 });
 

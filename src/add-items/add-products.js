@@ -28,8 +28,8 @@ async function createProduct(productInfo, priceId){
     const connection = await database.getConnection();
     let response = '';
     let queryAddProduct = `INSERT INTO product 
-        (name, description, slug, sub_category_id, total_quantity, bar_code, price_id, admin_id) 
-        VALUES ('${productInfo.data.pName}', '${productInfo.data.pDesc}', '${productInfo.data.pSlug}', ${productInfo.data.pCategoryInfo.id}, ${productInfo.data.pQantity}, ${productInfo.data.pCodeBar}, ${priceId}, 1);`;
+        (name, colors, description, slug, sub_category_id, total_quantity, bar_code, price_id, admin_id) 
+        VALUES ('${productInfo.data.pName}', '${productInfo.data.pColors}', '${productInfo.data.pDesc}', '${productInfo.data.pSlug}', ${productInfo.data.pCategoryInfo.id}, ${productInfo.data.pQantity}, ${productInfo.data.pCodeBar}, ${priceId}, 1);`;
     const [rowsAddProduct, fieldsAdd] = await connection.query(queryAddProduct);
     if(rowsAddProduct && rowsAddProduct.affectedRows == 1){
         let urlsInfo = {
@@ -48,7 +48,7 @@ async function updateProduct(pInfoToUpdate){
     const connection = await database.getConnection();
     let bodyResponse = {};
 
-    let queryUpdateProduct = `UPDATE product SET name = '${pInfoToUpdate.data.pName}', description = '${pInfoToUpdate.data.pDesc}', total_quantity = ${pInfoToUpdate.data.pQantity} WHERE (id = ${pInfoToUpdate.data.pId});`;
+    let queryUpdateProduct = `UPDATE product SET name = '${pInfoToUpdate.data.pName}', description = '${pInfoToUpdate.data.pDesc}', colors = '${pInfoToUpdate.data.pColors}', total_quantity = ${pInfoToUpdate.data.pQantity} WHERE (id = ${pInfoToUpdate.data.pId});`;
     const [rowsUpdateProduct, fieldsAdd] = await connection.query(queryUpdateProduct);
     if(rowsUpdateProduct && rowsUpdateProduct.affectedRows == 1){
         let realPrice = pInfoToUpdate.data.pPrice - ((pInfoToUpdate.data.pPrice*pInfoToUpdate.data.pPercent)/100);

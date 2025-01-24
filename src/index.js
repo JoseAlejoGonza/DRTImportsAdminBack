@@ -9,6 +9,8 @@ const category = require("./add-items/add-category");
 const product = require("./add-items/add-products");
 const purchase = require("./purchase/send-purchase")
 const constProduct = require("./const/const-product");
+const escpos = require('escpos');
+escpos.USB = require('escpos-usb');
 const cors = require("cors");
 
 // Initial configuration
@@ -18,7 +20,7 @@ app.listen(app.get("port"));
 
 // Middlewares
 app.use(cors({
-    origin: ['http://localhost:4200', 'http://localhost']
+    origin: ['http://localhost:4200', 'http://localhost', 'http://localhost:63938']
 }));
 app.use(morgan("dev"));
 app.use(express.json());
@@ -26,7 +28,7 @@ app.use(express.json());
 // Routes
 app.get("/products", async (req, res)=>{
     const connection = await database.getConnection();
-    let query = `SELECT p.id AS product_id, p.name AS product_name, p.description AS product_description, p.total_quantity, p.bar_code, p.price_id, pp.price, pp.regular_price, pp.discount, sc.sub_category_name, GROUP_CONCAT(img.image_url) AS images, GROUP_CONCAT(img.id) AS imagesId FROM product p JOIN product_price pp ON p.price_id = pp.id JOIN sub_category sc ON p.sub_category_id = sc.id LEFT JOIN imagedetails img ON p.id = img.product_id GROUP BY p.id;`;
+    let query = `SELECT p.id AS product_id, p.name AS product_name, p.description AS product_description, p.total_quantity, p.bar_code, p.price_id, p.colors, pp.price, pp.regular_price, pp.discount, sc.sub_category_name, GROUP_CONCAT(img.image_url) AS images, GROUP_CONCAT(img.id) AS imagesId FROM product p JOIN product_price pp ON p.price_id = pp.id JOIN sub_category sc ON p.sub_category_id = sc.id LEFT JOIN imagedetails img ON p.id = img.product_id GROUP BY p.id;`;
     const [rows, fields] = await connection.query(query);
     res.json(rows);
 });
@@ -191,7 +193,7 @@ app.get("/list-pending-purchases-delivered", async (req, res)=>{
 app.get("/list-products-by-order/:idPurchase", async (req, res)=>{
     const itemId = req.params.idPurchase;
     const connection = await database.getConnection();
-    const query = `SELECT p.name, p.bar_code, p.sub_category_id, pi.purchase_quantity,pi.unit_price,pi.total_price FROM purchase_items pi JOIN product p ON pi.product_id = p.id WHERE pi.purchase_id = ${itemId};`
+    const query = `SELECT p.name, p.bar_code, p.sub_category_id, pi.purchase_quantity,pi.unit_price,pi.total_price,pi.color_selected FROM purchase_items pi JOIN product p ON pi.product_id = p.id WHERE pi.purchase_id = ${itemId};`
     const [rows, fields] = await connection.query(query);
     res.json(rows);
 });
@@ -212,5 +214,44 @@ app.put("/send-purchase", async (req, res)=>{
         }
     }else{
         res.sendStatus(400);
+    }
+});
+
+app.post('/pos/imprimir', async (req, res) => {
+    try {
+        const { cliente, productos, total } = req.body;
+
+        // Configurar el dispositivo y la impresora
+        const device = new escpos.USB(); // Usa USB, ajusta según tu conexión (USB, Bluetooth, etc.)
+        const printer = new escpos.Printer(device);
+
+        // Abre conexión con la impresora
+        device.open(() => {
+        // Imprime los detalles de la factura
+        printer
+            .align('ct') // Centrar el texto
+            .text('**Tienda XYZ**') // Nombre de tu tienda
+            .text('---------------------------') // Línea separadora
+            .text(`Cliente: ${cliente}`) // Nombre del cliente
+            .text('Productos:')
+            .text('---------------------------');
+
+        productos.forEach((producto) => {
+            printer.text(`${producto.nombre}  $${producto.precio}`);
+        });
+
+        printer
+            .text('---------------------------')
+            .text(`TOTAL: $${total}`)
+            .text('Gracias por su compra!')
+            .cut() // Cortar el papel
+            .cashdraw() // Comando para abrir el cajón de dinero
+            .close(); // Finalizar
+
+        res.status(200).send({ message: 'Factura impresa y cajón abierto.' });
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: 'Error al imprimir factura.' });
     }
 });
